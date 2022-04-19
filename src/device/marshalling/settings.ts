@@ -3,6 +3,9 @@ import {Settings} from '../settings';
 import {marshallRelay, unmarshallRelay} from './relay';
 
 export const unmarshallRemoteSettings = (settings: Json): Settings => {
+  if (!settings) {
+    throw new Error('Invalid settings: ' + settings);
+  }
   return {
     device: {
       type: settings.device.type,

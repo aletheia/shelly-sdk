@@ -1,16 +1,18 @@
 import axios from 'axios';
+import {unmarshallRemoteSettings} from './marshalling/settings';
 import {unmarshallStatus} from './marshalling/status';
+import {Settings} from './settings';
 import {Status} from './status';
 import {Type} from './type';
 
 const SHELLY_DEFAULT_PORT = 80;
 
-export interface ShellyConfig {
+export interface Config {
   name?: string;
   type?: Type;
   id: string;
   ip: string;
-  port?: number;
+  port: number;
 }
 //192.168.1.154/settings/relay/0?default_state=off
 
@@ -42,73 +44,100 @@ const sendCommand = async (
   }
 };
 
-const getDeviceStatus = async (ip: string, port: number) => {
-  return sendCommand(ip, port, 'status');
-};
+export class Shelly {
+  static async scanNetwork(
+    baseIp: string,
+    from = 0,
+    to = 255,
+    port = SHELLY_DEFAULT_PORT,
+    timeout = 30000
+  ): Promise<Config[]> {
+    const ipRegex =
+      /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+    if (!ipRegex.test(baseIp)) {
+      throw new Error('Invalid IP address');
+    }
+    console.log(`Scanning network from ${baseIp}.${from} to ${baseIp}.${to}`);
 
-const scanNetwork = async (
-  baseIp: string,
-  port = SHELLY_DEFAULT_PORT,
-  timeout = 30000
-) => {
-  const ipRegex =
-    /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  if (!ipRegex.test(baseIp)) {
-    throw new Error('Invalid IP address');
-  }
-  const ipParts = baseIp.split('.');
-  const ipBase = ipParts.slice(0, 3).join('.');
+    const ipParts = baseIp.split('.');
+    const ipBase = ipParts.slice(0, 3).join('.');
+    const devices: Config[] = [];
 
-  const promises = [...Array(255).keys()].map(
-    async (i: number): Promise<Shelly | undefined> => {
+    const scanSegment = async (i: number) => {
       const ip = `${ipBase}.${i}`;
       try {
-        const status = await sendCommand(ip, port, 'status', timeout);
-        if (status.mac) {
-          console.log(`Found ${status.mac} at ${ip}`);
-          return new Shelly({
-            name: status.mac,
-            type: Type.SHELLY_1,
-            id: status.mac,
+        const deviceInfo = await sendCommand(ip, port, 'settings', timeout);
+        if (deviceInfo.device) {
+          console.log(`Found ${deviceInfo.device.mac} at ${ip}`);
+          const config = {
+            name: deviceInfo.name,
+            type: deviceInfo.device.type,
+            id: deviceInfo.device.hostname,
             ip,
-            port: 80,
-          });
+            port,
+          };
+          devices.push(config);
+          return config;
         } else {
+          console.log(`No device found at ${ip}`);
           return undefined;
         }
       } catch (e) {
+        // console.log(`Failed to scan ${ip}: ${(e as Error).message}`);
         return undefined;
       }
-    }
-  );
-  const results = await Promise.all(promises);
-  return results.filter(r => r !== undefined);
-};
+    };
 
-export class Shelly {
-  static async scanNetwork(baseIp: string) {
-    return await scanNetwork(baseIp);
+    const promises = [...Array(to - from + 1)].map((_, i) => {
+      return scanSegment(i + from);
+    });
+
+    await Promise.all(promises);
+    return devices.filter(r => r !== undefined) as Config[];
+  }
+  static async create(configList: Config[]): Promise<Shelly[]> {
+    const devices = configList.map(config => {
+      return new Shelly(config);
+    });
+    const promises = devices.map(device => {
+      return device.init();
+    });
+    await Promise.all(promises);
+    return devices;
   }
   protected status?: Status;
+  protected settings?: Settings;
 
-  constructor(protected readonly config: ShellyConfig) {
+  constructor(protected readonly config: Config) {
     this.config = config;
   }
   async init() {
-    await this.update();
+    await this.updateSettings();
+    return this;
   }
 
-  async update() {
-    const res = await getDeviceStatus(
-      this.config.ip,
-      this.config.port || SHELLY_DEFAULT_PORT
-    );
-    this.status = unmarshallStatus(res.data);
+  async updateSettings() {
+    console.log(`Updating settings for ${this.config.ip}`);
+    const res = await sendCommand(this.config.ip, this.config.port, 'settings');
+    this.settings = unmarshallRemoteSettings(res);
   }
+
+  async updateStatus() {
+    const res = await sendCommand(this.config.ip, this.config.port, 'status');
+    this.status = unmarshallStatus(res);
+  }
+
   getStatus(): Status {
     if (!this.status) {
       throw new Error('Device not initialized');
     }
     return this.status;
+  }
+
+  getSettings(): Settings {
+    if (!this.settings) {
+      throw new Error('Device not initialized');
+    }
+    return this.settings;
   }
 }

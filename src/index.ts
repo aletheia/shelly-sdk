@@ -1,4 +1,4 @@
-import {Shelly, ShellyConfig, Type} from './device';
+import {Config, Shelly, Type} from './device';
 
 (async () => {
   const ip = '192.168.1.154';
@@ -6,7 +6,7 @@ import {Shelly, ShellyConfig, Type} from './device';
   const id = '12345678';
   const name = 'Shelly';
   const type = Type.SHELLY_1;
-  const config: ShellyConfig = {
+  const config: Config = {
     name,
     type,
     id,
@@ -14,6 +14,8 @@ import {Shelly, ShellyConfig, Type} from './device';
     port,
   };
 
-  const devices = await Shelly.scanNetwork('192.168.1.0');
-  console.log(devices);
+  const configs = await Shelly.scanNetwork('10.10.10.0', 150, 159);
+  console.log(configs);
+  const devices = await Shelly.create(configs);
+  console.log(devices[0].getSettings());
 })();

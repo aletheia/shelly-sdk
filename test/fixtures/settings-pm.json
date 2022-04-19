@@ -1,0 +1,89 @@
+{
+  "device": {
+    "type": "SHPLG-S",
+    "mac": "E098069D8CDD",
+    "hostname": "shellyplug-s-9D8CDD",
+    "num_outputs": 1,
+    "num_meters": 1
+  },
+  "wifi_ap": {"enabled": false, "ssid": "shellyplug-s-9D8CDD", "key": ""},
+  "wifi_sta": {
+    "enabled": true,
+    "ssid": "Ravenskill",
+    "ipv4_method": "dhcp",
+    "ip": null,
+    "gw": null,
+    "mask": null,
+    "dns": null
+  },
+  "wifi_sta1": {
+    "enabled": false,
+    "ssid": null,
+    "ipv4_method": "dhcp",
+    "ip": null,
+    "gw": null,
+    "mask": null,
+    "dns": null
+  },
+  "ap_roaming": {"enabled": false, "threshold": -70},
+  "mqtt": {
+    "enable": false,
+    "server": "192.168.33.3:1883",
+    "user": "",
+    "id": "shellyplug-s-9D8CDD",
+    "reconnect_timeout_max": 60.0,
+    "reconnect_timeout_min": 2.0,
+    "clean_session": true,
+    "keep_alive": 60,
+    "max_qos": 0,
+    "retain": false,
+    "update_period": 30
+  },
+  "coiot": {"enabled": true, "update_period": 15, "peer": ""},
+  "sntp": {"server": "time.google.com", "enabled": true},
+  "login": {"enabled": false, "unprotected": false, "username": "admin"},
+  "pin_code": "cfYRTi",
+  "name": "Lavatrice",
+  "fw": "20220209-094058/v1.11.8-g8c7bb8d",
+  "discoverable": false,
+  "build_info": {
+    "build_id": "20220209-094058/v1.11.8-g8c7bb8d",
+    "build_timestamp": "2022-02-09T09:40:58Z",
+    "build_version": "1.0"
+  },
+  "cloud": {"enabled": true, "connected": true},
+  "timezone": "Europe/Rome",
+  "lat": 45.458031,
+  "lng": 7.87121,
+  "tzautodetect": true,
+  "tz_utc_offset": 7200,
+  "tz_dst": false,
+  "tz_dst_auto": true,
+  "time": "22:23",
+  "unixtime": 1650313395,
+  "led_status_disable": false,
+  "debug_enable": false,
+  "allow_cross_origin": false,
+  "actions": {
+    "active": false,
+    "names": ["btn_on_url", "out_on_url", "out_off_url"]
+  },
+  "hwinfo": {"hw_revision": "prod-190516", "batch_id": 1},
+  "max_power": 2500,
+  "led_power_disable": false,
+  "relays": [
+    {
+      "name": null,
+      "appliance_type": "General",
+      "ison": true,
+      "has_timer": false,
+      "default_state": "on",
+      "auto_on": 0.0,
+      "auto_off": 0.0,
+      "schedule": false,
+      "schedule_rules": [],
+      "max_power": 2500
+    }
+  ],
+  "eco_mode_enabled": true
+}

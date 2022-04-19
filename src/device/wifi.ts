@@ -4,6 +4,7 @@ export default interface Wifi {
   rssi?: number;
   connected?: boolean;
   ip?: string;
+  port?: number;
   gw?: string;
   mask?: string;
   dns?: string;
