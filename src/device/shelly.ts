@@ -5,6 +5,7 @@ import {unmarshallStatus} from './marshalling/status';
 import {Settings} from './settings';
 import {Status} from './status';
 import {Type} from './type';
+import {nanoid} from 'nanoid';
 
 const SHELLY_DEFAULT_PORT = 80;
 
@@ -27,7 +28,7 @@ export interface RemoteDeviceParams {
 }
 
 const sendCommand = async (params: RemoteDeviceParams): Promise<Json> => {
-  const {ip, port, path, command, value} = params;
+  const {ip, path, port, command, value} = params;
   const timeout = params.timeout || 1000;
   let url = `http://${ip}:${port}/${path}`;
   if (command) {
@@ -80,7 +81,6 @@ export class Shelly {
     if (!ipRegex.test(baseIp)) {
       throw new Error('Invalid IP address');
     }
-    console.log(`Scanning network from ${baseIp}.${from} to ${baseIp}.${to}`);
 
     const ipParts = baseIp.split('.');
     const ipBase = ipParts.slice(0, 3).join('.');
@@ -96,7 +96,6 @@ export class Shelly {
           timeout,
         });
         if (deviceInfo.device) {
-          console.log(`Found ${deviceInfo.device.mac} at ${ip}`);
           const config = {
             name: deviceInfo.name,
             type: deviceInfo.device.type,
@@ -107,11 +106,9 @@ export class Shelly {
           devices.push(config);
           return config;
         } else {
-          console.log(`No device found at ${ip}`);
           return undefined;
         }
       } catch (e) {
-        // console.log(`Failed to scan ${ip}: ${(e as Error).message}`);
         return undefined;
       }
     };
@@ -133,11 +130,16 @@ export class Shelly {
     await Promise.all(promises);
     return devices;
   }
+  protected readonly config: Config;
   protected _status?: Status;
   protected _settings?: Settings;
 
-  constructor(protected readonly config: Config) {
-    this.config = config;
+  constructor(config: Partial<Config> & {ip: string}) {
+    this.config = Object.assign(
+      {},
+      {port: SHELLY_DEFAULT_PORT, id: nanoid()},
+      config
+    );
   }
   async init() {
     await this.settings();
