@@ -1,4 +1,5 @@
 import axios from 'axios';
+import {Json} from '../util/types';
 import {unmarshallRemoteSettings} from './marshalling/settings';
 import {unmarshallStatus} from './marshalling/status';
 import {Settings} from './settings';
@@ -14,16 +15,20 @@ export interface Config {
   ip: string;
   port: number;
 }
-//192.168.1.154/settings/relay/0?default_state=off
 
-const sendCommand = async (
-  ip: string,
-  port: number,
-  path: string,
-  timeout = 0,
-  command?: string,
-  value?: string
-): Promise<any> => {
+export interface RemoteDeviceParams {
+  ip: string;
+  port: number;
+  path: string;
+  command?: string;
+  value?: string;
+  body?: Json;
+  timeout?: number;
+}
+
+const sendCommand = async (params: RemoteDeviceParams): Promise<Json> => {
+  const {ip, port, path, command, value} = params;
+  const timeout = params.timeout || 1000;
   let url = `http://${ip}:${port}/${path}`;
   if (command) {
     url += `?${command}=${value}`;
@@ -38,7 +43,25 @@ const sendCommand = async (
     timeout,
   });
   if (response.status === 200) {
-    return response.data;
+    return response.data as Json;
+  } else {
+    throw new Error(`HTTP ${response.status}`);
+  }
+};
+
+const updateDevice = async (params: Json) => {
+  const {ip, port, path, body} = params;
+  const response = await axios({
+    method: 'POST',
+    url: `http://${ip}:${port}/${path}`,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-requested-with': 'XMLHttpRequest',
+    },
+    data: body,
+  });
+  if (response.status === 200) {
+    return response.data as Json;
   } else {
     throw new Error(`HTTP ${response.status}`);
   }
@@ -66,7 +89,12 @@ export class Shelly {
     const scanSegment = async (i: number) => {
       const ip = `${ipBase}.${i}`;
       try {
-        const deviceInfo = await sendCommand(ip, port, 'settings', timeout);
+        const deviceInfo = await sendCommand({
+          ip,
+          port,
+          path: 'settings',
+          timeout,
+        });
         if (deviceInfo.device) {
           console.log(`Found ${deviceInfo.device.mac} at ${ip}`);
           const config = {
@@ -95,7 +123,7 @@ export class Shelly {
     await Promise.all(promises);
     return devices.filter(r => r !== undefined) as Config[];
   }
-  static async create(configList: Config[]): Promise<Shelly[]> {
+  static async instantiateDevices(configList: Config[]): Promise<Shelly[]> {
     const devices = configList.map(config => {
       return new Shelly(config);
     });
@@ -105,39 +133,77 @@ export class Shelly {
     await Promise.all(promises);
     return devices;
   }
-  protected status?: Status;
-  protected settings?: Settings;
+  protected _status?: Status;
+  protected _settings?: Settings;
 
   constructor(protected readonly config: Config) {
     this.config = config;
   }
   async init() {
-    await this.updateSettings();
+    await this.settings();
+    await this.status();
     return this;
   }
 
-  async updateSettings() {
-    console.log(`Updating settings for ${this.config.ip}`);
-    const res = await sendCommand(this.config.ip, this.config.port, 'settings');
-    this.settings = unmarshallRemoteSettings(res);
+  getConfig(): Config {
+    return this.config;
   }
 
-  async updateStatus() {
-    const res = await sendCommand(this.config.ip, this.config.port, 'status');
-    this.status = unmarshallStatus(res);
+  async settings(): Promise<Settings> {
+    const res = await sendCommand({
+      ip: this.config.ip,
+      port: this.config.port,
+      path: 'settings',
+    });
+    this._settings = unmarshallRemoteSettings(res);
+    return this._settings;
   }
 
-  getStatus(): Status {
-    if (!this.status) {
-      throw new Error('Device not initialized');
-    }
-    return this.status;
+  async status(): Promise<Status> {
+    const res = await sendCommand({
+      ip: this.config.ip,
+      port: this.config.port,
+      path: 'status',
+    });
+    this._status = unmarshallStatus(res);
+    return this._status;
+  }
+  async switchOff() {
+    return this.switch(false);
   }
 
-  getSettings(): Settings {
-    if (!this.settings) {
-      throw new Error('Device not initialized');
-    }
-    return this.settings;
+  async switchOn() {
+    return this.switch(true);
+  }
+
+  async switch(state: boolean) {
+    return sendCommand({
+      ip: this.config.ip,
+      port: this.config.port,
+      path: 'relay/0',
+      command: 'turn',
+      value: state ? 'on' : 'off',
+    });
+  }
+
+  async update(settings: Partial<Settings>) {
+    return updateDevice({
+      ip: this.config.ip,
+      port: this.config.port,
+      path: 'settings',
+      body: settings,
+    });
+  }
+
+  toString() {
+    return `${this.config.name} (${this.config.id})`;
+  }
+
+  serialize() {
+    return {
+      ...this.config,
+      settings: this._settings,
+      status: this._status,
+    };
   }
 }
