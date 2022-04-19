@@ -13,8 +13,8 @@ typings/
 espowered/
 
 # for https://github.com/Microsoft/TypeScript/issues/4667
-lib/**/*.ts
-!lib/**/*.d.ts
+src/**/*.ts
+!src/**/*.d.ts
 !**/*.d.ts
 
 # codes
@@ -28,5 +28,12 @@ circle.yml
 setup.sh
 Gruntfile.js
 tslint.json
+tsconfig.json
+.prettierrc
+.gitignore
+.env
+test
+.eslintignore
+.eslintrc
 
 npm-debug.log
