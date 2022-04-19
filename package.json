@@ -1,16 +1,29 @@
 {
-  "name": "shelly-sdk-node",
-  "version": "0.1.0",
-  "description": "Shelly SDK for Node.js",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "name": "shelly-sdk",
+  "version": "0.1.1",
+  "description": "Shelly SDK for Node.js with Types definition",
+  "main": "build/lib/index.js",
+  "types": "build/lib/index.d.ts",
   "files": [
     "build/src"
   ],
-  "license": "Apache-2.0",
-  "keywords": [],
+  "author": {
+    "name": "Luca Bianchi",
+    "email": "bianchi.luca@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aletheia/shelly-sdk.git"
+  },
+  "license": "MIT",
+  "keywords": [
+    "Shelly",
+    "Shelly SDK",
+    "Shelly Cloud",
+    "Shelly Cloud SDK",
+    "Shelly Cloud SDK for Node.js"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc",
