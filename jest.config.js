@@ -27,5 +27,5 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   rootDir: './',
-  roots: ['<rootDir>/src', '<rootDir>/test'],
+  roots: ['<rootDir>/src'],
 };

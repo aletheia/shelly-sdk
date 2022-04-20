@@ -1,4 +1,4 @@
-import {Shelly} from '../../src/index';
+import {Shelly} from '../../index';
 
 describe('Scan Network Test', () => {
   test('Scan Network', async () => {
