@@ -6,6 +6,7 @@ import {Settings} from './settings';
 import {Status} from './status';
 import {Type} from './type';
 import {nanoid} from 'nanoid';
+import {Netmask} from 'netmask';
 
 const SHELLY_DEFAULT_PORT = 80;
 
@@ -71,23 +72,25 @@ const updateDevice = async (params: Json) => {
 export class Shelly {
   static async scanNetwork(
     baseIp: string,
-    from = 0,
-    to = 255,
     port = SHELLY_DEFAULT_PORT,
     timeout = 30000
   ): Promise<Config[]> {
     const ipRegex =
       /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    if (!ipRegex.test(baseIp)) {
+    const [networkAddress, subnetMask] = baseIp.split('/');
+    if (!ipRegex.test(networkAddress)) {
       throw new Error('Invalid IP address');
     }
+    if (!subnetMask) {
+      throw new Error('Invalid subnet mask');
+    }
 
+    const block = new Netmask(baseIp);
     const ipParts = baseIp.split('.');
     const ipBase = ipParts.slice(0, 3).join('.');
     const devices: Config[] = [];
 
-    const scanSegment = async (i: number) => {
-      const ip = `${ipBase}.${i}`;
+    const scanIp = async (ip: string) => {
       try {
         const deviceInfo = await sendCommand({
           ip,
@@ -113,8 +116,13 @@ export class Shelly {
       }
     };
 
-    const promises = [...Array(to - from + 1)].map((_, i) => {
-      return scanSegment(i + from);
+    const addresses: string[] = [];
+    block.forEach((ip: string) => {
+      addresses.push(ip);
+    });
+
+    const promises = addresses.map(async (ip: string) => {
+      return scanIp(ip);
     });
 
     await Promise.all(promises);
