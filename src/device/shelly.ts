@@ -86,8 +86,7 @@ export class Shelly {
     }
 
     const block = new Netmask(baseIp);
-    const ipParts = baseIp.split('.');
-    const ipBase = ipParts.slice(0, 3).join('.');
+
     const devices: Config[] = [];
 
     const scanIp = async (ip: string) => {

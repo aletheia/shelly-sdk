@@ -29,6 +29,7 @@
     "compile": "tsc",
     "fix": "gts fix",
     "start": "ts-node src/index.ts",
+    "prepublish": "gts clean compile",
     "test": "jest ."
   },
   "devDependencies": {
