@@ -1,6 +1,6 @@
 {
   "name": "shelly-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Shelly SDK for Node.js with Types definition",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
